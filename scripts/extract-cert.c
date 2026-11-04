@@ -21,7 +21,10 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#if !defined(OPENSSL_NO_ENGINE) && !defined(OPENSSL_IS_BORINGSSL)
+#define USE_PKCS11_ENGINE
 #include <openssl/engine.h>
+#endif
 
 /*
  * OpenSSL 3.0 deprecates the OpenSSL's ENGINE API.
@@ -56,6 +59,7 @@ static void display_openssl_errors(int l)
 	}
 }
 
+#ifdef USE_PKCS11_ENGINE
 static void drain_openssl_errors(void)
 {
 	const char *file;
@@ -65,6 +69,7 @@ static void drain_openssl_errors(void)
 		return;
 	while (ERR_get_error_line(&file, &line)) {}
 }
+#endif
 
 #define ERR(cond, fmt, ...)				\
 	do {						\
@@ -75,7 +80,9 @@ static void drain_openssl_errors(void)
 		}					\
 	} while(0)
 
+#ifdef USE_PKCS11_ENGINE
 static const char *key_pass;
+#endif
 static BIO *wb;
 static char *cert_dst;
 int kbuild_verbose;
@@ -104,7 +111,9 @@ int main(int argc, char **argv)
 
 	kbuild_verbose = atoi(getenv("KBUILD_VERBOSE")?:"0");
 
-        key_pass = getenv("KBUILD_SIGN_PIN");
+#ifdef USE_PKCS11_ENGINE
+	key_pass = getenv("KBUILD_SIGN_PIN");
+#endif
 
 	if (argc != 3)
 		format();
@@ -119,6 +128,7 @@ int main(int argc, char **argv)
 		fclose(f);
 		exit(0);
 	} else if (!strncmp(cert_src, "pkcs11:", 7)) {
+#ifdef USE_PKCS11_ENGINE
 		ENGINE *e;
 		struct {
 			const char *cert_id;
@@ -141,6 +151,9 @@ int main(int argc, char **argv)
 		ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1);
 		ERR(!parms.cert, "Get X.509 from PKCS#11");
 		write_cert(parms.cert);
+#else
+		errx(1, "PKCS#11 is not supported by this libcrypto build");
+#endif
 	} else {
 		BIO *b;
 		X509 *x509;
