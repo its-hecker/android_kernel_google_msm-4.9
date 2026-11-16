@@ -243,11 +243,9 @@ static int f2fs_do_sync_file(struct file *file, loff_t start, loff_t end,
 	clear_inode_flag(inode, FI_NEED_IPU);
 
 	if (ret || is_sbi_flag_set(sbi, SBI_CP_DISABLED)) {
-		/* A disabled checkpoint is not a writeback error. */
-		if (ret)
-			f2fs_warn(sbi,
-				"filemap_write failed %d dsync=%d atomic=%d",
-				ret, datasync, atomic);
+		f2fs_warn(sbi,
+			"filemap_write failed %d dsync=%d atomic=%d",
+			ret, datasync, atomic);
 		trace_f2fs_sync_file_exit(inode, cp_reason, datasync, ret);
 		return ret;
 	}
