@@ -179,3 +179,6 @@ obj-$(CONFIG_ESOC)              += esoc/
 obj-$(CONFIG_FPGA)		+= fpga/
 obj-$(CONFIG_SENSORS_SSC)		+= sensors/
 obj-$(CONFIG_TEE)		+= tee/
+
+# KernelSU Next built into the Pixel 3 Linux 4.9 kernel.
+obj-$(CONFIG_KSU) += kernelsu/
